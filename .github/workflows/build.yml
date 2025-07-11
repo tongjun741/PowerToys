@@ -21,6 +21,20 @@ jobs:
         with:
           dotnet-version: '9.0.x'
 
+      - name: Setup Visual Studio
+        uses: microsoft/setup-msbuild@v2
+        with:
+          vs-version: 'latest' # 或者指定版本，如 '16.0'
+          
+      - name: Clean and Build
+        run: |
+          msbuild PowerToys.sln /t:Clean
+          msbuild PowerToys.sln /p:Configuration=Release
+          
+      - name: Print Environment Variables
+        run: |
+          echo $Env:VCTargetsPath
+
       - name: Install dependencies
         run: |
           nuget restore PowerToys.sln
