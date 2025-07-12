@@ -17,30 +17,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: 0.86.0
+          submodules: recursive
 
+      - name: Setup build environment
+        uses: ilammy/msvc-dev-cmd@v1
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '9.0.x'
 
-      - name: Setup Visual Studio
-        uses: microsoft/setup-msbuild@v2
+      - name: Install NuGet
+        uses: nuget/setup-nuget@v1
         with:
-          vs-version: 'latest' # 或者指定版本，如 '16.0'
+          nuget-version: '6.x'
+
+      - name: Restore packages
+        run: |
+          # First restore C++ packages using NuGet
+          nuget restore PowerToys.sln -MSBuildPath "$env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\MSBuild\Current\Bin"
           
-      - name: Print Environment Variables
-        run: |
-          echo $Env:VCTargetsPath
+          # Then restore .NET packages
+          dotnet restore PowerToys.sln
 
-      - name: Install dependencies
+      - name: Build solution
         run: |
-          nuget restore PowerToys.sln
-          dotnet restore
-
-      - name: Build PowerToys
-        run: |
-          dotnet build PowerToys.sln --configuration Release
+          msbuild PowerToys.sln /p:Configuration=Release /p:Platform="x64" /p:RestorePackagesConfig=true /p:UseSharedCompilation=false /m
 
       - name: Run tests
         run: |
-          dotnet test PowerToys.sln --configuration Release
+          dotnet test PowerToys.sln --configuration Release --no-build
